@@ -1,0 +1,45 @@
+# QUBO — Quadratic Unconstrained Binary Optimization:  min_x  x^T Q x,  x∈{0,1}^n.
+# Q's diagonal is the per-node bias (node field), its off-diagonal the pairwise
+# couplings (edge weights). ECO-DQN-style flip-improvement solver: start at x=0
+# and flip bits over a ~2n horizon, rewarded by best-so-far energy decrease.
+#
+# Solve YOUR OWN Q from Python:
+#   import graco
+#   g   = graco.qubo(Q)                      # Q: [n,n] array/tensor (or a list)
+#   env = graco.make_env("qubo"); env.reset(g)
+#   # then roll out a trained policy / decoder on env
+base: base.yaml
+
+run_name: qubo
+
+generator:
+  type: qubo
+  num_nodes: [40, 60]
+  base: er                   # er | ba | complete
+  p: 0.15                    # ER edge probability (coupling sparsity)
+  coupling_dist: uniform     # off-diagonal Q_ij distribution
+  coupling_params: {low: -1.0, high: 1.0}
+  bias_scale: 1.0            # diagonal Q_ii ~ U(-bias_scale, bias_scale)
+
+env:
+  type: qubo
+  horizon_frac: 2.0          # 2n flips per episode
+
+algo:
+  type: dqn
+  double: true
+  dueling: true
+  n_step: 2
+  gamma: 0.99
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  eval_every: 100
+  baselines: [random]

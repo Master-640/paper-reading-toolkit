@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Training / experiment outputs
+runs/
+outputs/
+wandb/
+*.pt
+*.ckpt
+*.log
+*.jsonl
+events.out.tfevents.*
+exp_logs/
+
+# Not part of the package
+papers/
+*.zip
+.claude/
+
+# Local environments / editors
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+.DS_Store
+
+# Keep bundled example configs even though other artifacts are ignored
+!graco/configs/*.yaml

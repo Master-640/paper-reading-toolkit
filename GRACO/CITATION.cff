@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: "GRACO: A Vectorized Deep-RL Framework for Graph Combinatorial Optimization"
+message: "If you use GRACO in your research, please cite it."
+type: software
+authors:
+  - name: "GRACO Contributors"
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/graco/graco"
+keywords:
+  - deep reinforcement learning
+  - graph neural networks
+  - combinatorial optimization
+  - network dismantling
+  - spin glass
+  - maxcut
+references:
+  - type: article
+    title: "Finding key players in complex networks through deep reinforcement learning (FINDER)"
+    authors:
+      - name: "Changjun Fan et al."
+    journal: "Nature Machine Intelligence"
+    year: 2020
+  - type: article
+    title: "Searching for spin glass ground states through deep reinforcement learning (DIRAC)"
+    authors:
+      - name: "Changjun Fan et al."
+    journal: "Nature Communications"
+    year: 2023

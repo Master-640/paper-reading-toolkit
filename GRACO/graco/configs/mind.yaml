@@ -1,0 +1,18 @@
+# MIND — "Learning Network Dismantling Without Handcrafted Inputs". Discrete-SAC
+# dismantling from constant node inputs, using the MIND encoder (learnable-norm
+# attention + omni global node + jumping knowledge). Reuses SAC + dismantling.
+base: base.yaml
+run_name: mind
+generator: {type: erdos_renyi, num_nodes: [30, 50], p: 0.1}
+env: {type: dismantling}
+algo:
+  type: sac
+  gamma: 0.99
+  lr: 0.0003
+  batch_size: 64
+  learn_start: 1000
+  tau: 0.005
+  model:
+    encoder: {type: mind, hidden_dim: 64, num_layers: 3}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 32, iterations: 3000, eval_every: 300, baselines: [degree, adaptive_degree, collective_influence, corehd, random]}

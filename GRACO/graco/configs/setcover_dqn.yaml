@@ -1,0 +1,15 @@
+# Set Cover on bipartite instances (element/set nodes) — type-aware pipeline.
+# Uses a heterogeneous GNN (RGCN) over the bipartite node types.
+base: base.yaml
+run_name: setcover_dqn
+generator: {type: set_cover, num_elements: [30, 40], num_sets: 20, cover_size: 4}
+env: {type: set_cover}
+algo:
+  type: dqn
+  n_step: 3
+  double: true
+  model:
+    encoder: {type: rgcn, hidden_dim: 64, num_layers: 3, num_bases: 4}
+    head: {type: q_node}
+  buffer: {type: prioritized_replay, capacity: 100000}
+trainer: {num_envs: 32, iterations: 3000, baselines: [degree, random]}

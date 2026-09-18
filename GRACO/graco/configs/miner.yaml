@@ -1,0 +1,18 @@
+# MINER — multiplex/multilayer network disintegration. Reward penalizes the giant
+# mutually connected component (GMCC) across layers. Reuses dismantling + multiplex
+# generator (shared nodes, per-layer edge_type) + a layer-aware encoder + finder_q.
+base: base.yaml
+run_name: miner
+generator: {type: multiplex, num_layers: 2, base: er, p: 0.1, num_nodes: [40, 60]}
+env: {type: multiplex_dismantling}
+algo:
+  type: dqn
+  n_step: 5
+  double: false
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: multiplex_gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, random]}

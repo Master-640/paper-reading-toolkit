@@ -1,0 +1,17 @@
+# IKEoN — critical edges via line graph; component edge-count objective (Σ_C edges(C)²)
+# on the original graph. Same edge-dismantling substrate, IKEoN's edge_sq metric.
+base: base.yaml
+run_name: ikeon
+generator: {type: line_graph, base: {type: erdos_renyi, num_nodes: [40, 40], p: 0.1}}
+env: {type: edge_dismantling, metric: edge_sq}
+algo:
+  type: dqn
+  n_step: 3
+  double: true
+  gamma: 0.99
+  learn_start: 2000
+  model:
+    encoder: {type: graphsage, hidden_dim: 64, num_layers: 3, aggr: sum}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [random]}

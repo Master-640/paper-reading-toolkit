@@ -1,0 +1,18 @@
+# DeepELE — critical-node identification for epidemic (SIS) minimization. Reward =
+# marginal reduction of the accumulated SIS infection risk on the residual graph.
+# Reuses dismantling + graphsage + FINDER bilinear head + n-step DQN.
+base: base.yaml
+run_name: deepele
+generator: {type: barabasi_albert, num_nodes: [30, 50], m: 4}
+env: {type: sis_dismantling, beta: 0.3, sis_iters: 20}
+algo:
+  type: dqn
+  n_step: 5
+  double: false
+  gamma: 0.99
+  learn_start: 2000
+  model:
+    encoder: {type: graphsage, hidden_dim: 64, num_layers: 3, aggr: sum}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, random]}

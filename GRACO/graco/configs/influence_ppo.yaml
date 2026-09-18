@@ -1,0 +1,17 @@
+# Influence Maximization (Independent Cascade) — pick k seeds, PPO policy.
+base: base.yaml
+run_name: influence_ppo
+generator: {type: barabasi_albert, num_nodes: [40, 60], m: 3}
+env: {type: influence_max, budget: 6, activation_prob: 0.1, mc_samples: 16}
+algo:
+  type: ppo
+  gamma: 0.99
+  gae_lambda: 0.95
+  lr: 0.0003
+  ppo_epochs: 4
+  minibatch_size: 256
+  model:
+    encoder: {type: graphsage, hidden_dim: 64, num_layers: 3}
+    actor: {type: actor}
+    critic: {type: critic}
+trainer: {num_envs: 32, iterations: 2000, baselines: [degree, random]}

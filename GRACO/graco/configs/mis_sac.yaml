@@ -1,0 +1,18 @@
+# Maximum Independent Set with off-policy Discrete SAC.
+base: base.yaml
+run_name: mis_sac
+generator: {type: watts_strogatz, num_nodes: [40, 60], k: 6, p: 0.1}
+env: {type: mis}
+algo:
+  type: sac
+  n_step: 1
+  gamma: 0.99
+  lr: 0.0003
+  batch_size: 64
+  learn_start: 1000
+  tau: 0.005
+  target_entropy_ratio: 0.7
+  model:
+    encoder: {type: gin, hidden_dim: 64, num_layers: 3}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 32, iterations: 3000, baselines: [degree, random]}

@@ -1,0 +1,52 @@
+# ============================================================================
+#  DIRAC baseline  (Fan et al., Nature Communications 2023)
+#  Faithful reproduction on the GRACO framework:
+#    env      : spin-glass / Ising, reward = ΔH / |E|, bootstrap clipped at 0
+#    features : node = lattice coords / n (dim 4) ; edge = [w, sel, cut, 1]
+#    encoder  : structure2vec node<->edge alternation (max_bp_iter = 5)
+#    algo     : n-step (3) DQN, no double-DQN
+#    graphs   : 3D periodic lattice, N(0,1) couplings
+#
+#  Run:  graco train --config configs/dirac.yaml
+# ============================================================================
+base: base.yaml
+run_name: dirac
+
+generator:
+  type: dirac_lattice
+  dim: 3
+  periodic: true
+  num_nodes: [64, 64]           # 4x4x4 lattice (side = round(n^(1/3)))
+  weighted: true
+  weight_dist: normal
+  weight_params: {mean: 0.0, std: 1.0}
+
+env:
+  type: dirac_spinglass         # coords/n node features + DIRAC edge features
+
+algo:
+  type: dqn
+  gamma: 1.0
+  n_step: 3
+  batch_size: 16
+  lr: 0.0001
+  double: false
+  bootstrap_clip_min: 0.0       # DIRAC clips the bootstrap term at >= 0
+  eps_start: 1.0
+  eps_end: 0.05
+  eps_decay_steps: 50000
+  target_update_period: 1000
+  learn_start: 2000
+  model:
+    encoder: {type: s2v, hidden_dim: 64, num_layers: 5, norm: l2}
+    head: {type: q_node, use_graph_context: true}
+  buffer:
+    type: nstep_replay
+    capacity: 50000
+
+trainer:
+  num_envs: 16
+  iterations: 10000
+  eval_every: 300
+  n_valid: 100
+  baselines: [random]

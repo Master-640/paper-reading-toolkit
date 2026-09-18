@@ -1,0 +1,39 @@
+# Generic network-dismantling DQN on Barabási–Albert graphs:
+# GraphSAGE encoder + Double/n-step DQN, reward = -LCC/n^2. This is a plain
+# dismantling-DQN baseline — for the faithful FINDER reproduction see finder.yaml.
+base: base.yaml
+
+run_name: dismantling_dqn
+
+generator:
+  type: barabasi_albert
+  num_nodes: [30, 50]
+  weighted: false
+  m: 4
+
+env:
+  type: dismantling
+  cost_mode: unit          # unit (-LCC/n^2) | degree | random (cost-aware)
+
+algo:
+  type: dqn
+  n_step: 5
+  gamma: 1.0
+  double: true
+  model:
+    encoder:
+      type: graphsage
+      hidden_dim: 64
+      num_layers: 3
+      aggr: sum          # sum encodes degree from constant inputs (see FINDER audit)
+      residual: false
+    head:
+      type: q_node
+  buffer:
+    type: nstep_replay
+    capacity: 100000
+
+trainer:
+  num_envs: 16
+  iterations: 3000
+  baselines: [degree, adaptive_degree, random]

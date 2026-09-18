@@ -1,0 +1,37 @@
+# Minimum Vertex Cover on Erdős–Rényi graphs: GIN encoder + Dueling/PER DQN.
+base: base.yaml
+
+run_name: mvc_dqn
+
+generator:
+  type: erdos_renyi
+  num_nodes: [30, 50]
+  p: 0.15
+  weighted: false
+
+env:
+  type: mvc
+
+algo:
+  type: dqn
+  n_step: 3
+  gamma: 0.99
+  double: true
+  dueling: true
+  model:
+    encoder:
+      type: gin
+      hidden_dim: 64
+      num_layers: 4
+    head:
+      type: dueling_q
+  buffer:
+    type: prioritized_replay
+    capacity: 100000
+    alpha: 0.6
+    beta: 0.4
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  baselines: [degree, random]

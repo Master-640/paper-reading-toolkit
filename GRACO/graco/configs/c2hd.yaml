@@ -1,0 +1,19 @@
+# C2HD — cost-constrained hypergraph dismantling with dynamic cascading failure
+# (Jiang et al., Physica A 2025). Each removal triggers a two-step load-redistribution
+# cascade; reward penalizes the surviving giant component (minus optional cost).
+# Reuses dismantling + hypergraph generator (clique expansion + incidence) + hnhn + finder_q.
+base: base.yaml
+run_name: c2hd
+generator: {type: hypergraph, num_nodes: [40, 60], num_hyperedges: 25, hyperedge_size: 4}
+env: {type: cascade_dismantling, alpha: 1.0, beta: 1.0, tolerance: 0.2, cost_weight: 0.0}
+algo:
+  type: dqn
+  n_step: 5
+  double: false
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: hnhn, hidden_dim: 64, num_layers: 3}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, corehd, random]}

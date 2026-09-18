@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graco"
+version = "0.1.0"
+description = "GRACO — a fully-vectorized, YAML-configurable Deep-RL framework for combinatorial optimization on graphs"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "GRACO Contributors" }]
+keywords = [
+    "deep-reinforcement-learning",
+    "graph-neural-networks",
+    "combinatorial-optimization",
+    "network-dismantling",
+    "spin-glass",
+    "maxcut",
+    "pytorch",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.1",
+    "numpy>=1.23",
+    "networkx>=3.0",
+    "scipy>=1.10",
+    "omegaconf>=2.3",
+]
+
+[project.optional-dependencies]
+logging = ["tensorboard>=2.12", "wandb>=0.15"]
+solvers = ["pulp>=2.7"]            # exact ILP baselines (graco.heuristics.solvers)
+dev = ["pytest>=7.0", "pytest-cov", "ruff>=0.6"]
+all = [
+    "tensorboard>=2.12",
+    "wandb>=0.15",
+    "pulp>=2.7",
+    "pytest>=7.0",
+    "pytest-cov",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+graco = "graco.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/graco/graco"
+
+[tool.setuptools.packages.find]
+include = ["graco*"]
+
+[tool.setuptools.package-data]
+graco = ["configs/**/*.yaml", "py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]
+"tests/*" = ["F401", "E402"]
+"examples/*" = ["E402", "F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

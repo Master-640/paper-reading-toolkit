@@ -1,0 +1,20 @@
+# VNS — "Vital Node Searcher" (Du et al., Connection Science 2022). Graph embedding
+# + an LSTM module over the propagation-round sequence + a dueling-Q module, trained
+# with DQN on the LCC-based dismantling objective (episode return = -ANC). The dueling
+# head + DQN loop are reused; the `vns` encoder supplies the struct2vec + LSTM embedding.
+base: base.yaml
+run_name: vital_node_searcher
+generator: {type: barabasi_albert, num_nodes: [40, 60], m: 3}
+env: {type: dismantling}
+algo:
+  type: dqn
+  n_step: 5
+  double: true
+  dueling: true
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: vns, hidden_dim: 64, num_layers: 4}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, collective_influence, corehd, random]}

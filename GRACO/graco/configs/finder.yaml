@@ -1,0 +1,52 @@
+# ============================================================================
+#  FINDER baseline  (Fan et al., Nature Machine Intelligence 2020)
+#  Faithful reproduction on the GRACO framework:
+#    env      : dismantling with constant ones[n,2] node inputs + aux readout
+#    encoder  : GraphSAGE (max_bp_iter = 3)
+#    head     : bilinear cross-product Q + aux features
+#    algo     : n-step (5) DQN, no double-DQN, reconstruction loss (alpha=1e-4)
+#    graphs   : Barabasi-Albert (m=4), N in [30, 50]
+#
+#  Run:  graco train --config configs/finder.yaml
+# ============================================================================
+base: base.yaml
+run_name: finder
+
+generator:
+  type: barabasi_albert
+  num_nodes: [30, 50]
+  m: 4
+
+env:
+  type: finder_dismantling      # ones[n,2] features + graph aux_feat
+  cost_mode: unit               # reward = -LCC / n^2
+
+algo:
+  type: finder                  # DQN + bilinear head + reconstruction loss
+  gamma: 1.0
+  n_step: 5
+  batch_size: 64
+  lr: 0.0001
+  double: false
+  recon_alpha: 0.0001
+  eps_start: 1.0
+  eps_end: 0.05
+  eps_decay_steps: 10000        # in GRADIENT-UPDATE steps (see DQNAlgorithm.epsilon)
+  target_update_period: 1000
+  learn_start: 20000            # warm up the replay before the first update
+  learn_freq: 2                 # ~1 update per L fresh transitions (FINDER cadence)
+  model:
+    # SUM aggregation is essential: with constant ones[n,2] node inputs, sum makes
+    # the aggregate encode node degree (what dismantling ranks on); mean is degree-blind.
+    encoder: {type: graphsage, hidden_dim: 64, num_layers: 3, aggr: sum, norm: l2, residual: false}
+    head: {type: finder_q, aux_dim: 4}
+  buffer:
+    type: nstep_replay          # switch to prioritized_replay for FINDER+PER
+    capacity: 500000
+
+trainer:
+  num_envs: 16
+  iterations: 10000
+  eval_every: 200
+  n_valid: 100
+  baselines: [degree, adaptive_degree, random]

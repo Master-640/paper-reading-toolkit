@@ -1,0 +1,37 @@
+# Community detection by MODULARITY MAXIMIZATION (Newman, PNAS 2006).
+# Two-community split maximizing Newman's modularity Q = 1/4m Σ_ij B_ij s_i s_j,
+# B = A − kkᵀ/2m (an Ising model on the modularity matrix; the dense kkᵀ term is
+# rank-1 so Q is O(N+E)).  Trained on stochastic-block-model graphs that actually
+# have planted communities.
+base: base.yaml
+
+run_name: community_detection
+
+generator:
+  type: sbm                  # stochastic block model — planted communities
+  num_nodes: [80, 120]
+  num_blocks: 2
+  p_in: 0.30                 # intra-community edge probability
+  p_out: 0.03                # inter-community edge probability
+
+env:
+  type: modularity           # maximize Q(s) over a 2-community split
+
+algo:
+  type: dqn
+  double: true
+  dueling: true
+  n_step: 3
+  gamma: 0.99
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  eval_every: 100
+  baselines: [degree, random]

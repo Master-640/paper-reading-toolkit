@@ -1,0 +1,39 @@
+# MaxCut on Erdős–Rényi graphs with a GAT encoder trained by PPO
+# (per-node masked categorical policy + GAE).
+base: base.yaml
+
+run_name: maxcut_ppo
+
+generator:
+  type: erdos_renyi
+  num_nodes: [40, 60]
+  p: 0.15
+  weighted: true
+  weight_dist: bimodal      # +/-1 couplings
+
+env:
+  type: maxcut
+
+algo:
+  type: ppo
+  gamma: 0.99
+  gae_lambda: 0.95
+  lr: 0.0003
+  clip_eps: 0.2
+  ppo_epochs: 4
+  minibatch_size: 512
+  entropy_coef: 0.01
+  value_coef: 0.5
+  model:
+    encoder:
+      type: gatv2
+      hidden_dim: 64
+      num_layers: 3
+      num_heads: 4
+    actor: {type: actor}
+    critic: {type: critic, pool: mean}
+
+trainer:
+  num_envs: 64
+  iterations: 3000
+  baselines: [random]

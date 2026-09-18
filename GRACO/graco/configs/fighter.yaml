@@ -1,0 +1,10 @@
+# FIGHTER — critical-edge dismantling via the LINE GRAPH (edge removal = node removal on L(G)).
+# Faithful reuse: it is exactly FINDER (configs/finder.yaml) run on the line graph, so it
+# inherits the whole FINDER stack and only swaps the generator to the line-graph transform.
+base: finder.yaml
+
+run_name: fighter
+
+generator:
+  type: line_graph
+  base: {type: barabasi_albert, num_nodes: [30, 50], m: 4}   # dismantle edges of BA graphs

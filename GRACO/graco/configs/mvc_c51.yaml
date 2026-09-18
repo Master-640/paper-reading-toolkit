@@ -1,0 +1,18 @@
+# MVC with distributional C51 value learning + prioritized replay.
+base: base.yaml
+run_name: mvc_c51
+generator: {type: erdos_renyi, num_nodes: [30, 50], p: 0.15}
+env: {type: mvc}
+algo:
+  type: c51
+  n_step: 3
+  gamma: 0.99
+  num_atoms: 51
+  v_min: -30
+  v_max: 0
+  double: true
+  model:
+    encoder: {type: gatv2, hidden_dim: 64, num_layers: 3, num_heads: 4}
+    head: {type: distributional_q, num_atoms: 51}
+  buffer: {type: prioritized_replay, capacity: 100000}
+trainer: {num_envs: 32, iterations: 3000, baselines: [degree, random]}

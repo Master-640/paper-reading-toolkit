@@ -1,0 +1,20 @@
+# Pairwise-connectivity (ANC) network dismantling. Removes nodes to minimize the
+# number of still-connected node pairs (the ANC objective used by several
+# critical-node papers). Reuses the pairwise_dismantling env + Double/Dueling/
+# n-step DQN with a generic GraphSAGE encoder.
+base: base.yaml
+run_name: pairwise_dismantling
+generator: {type: barabasi_albert, num_nodes: [30, 50], m: 4}
+env: {type: pairwise_dismantling}
+algo:
+  type: dqn
+  double: true
+  dueling: true
+  n_step: 3
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: graphsage, hidden_dim: 64, num_layers: 3, aggr: sum}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, collective_influence, corehd, random]}

@@ -1,0 +1,96 @@
+# Sentinel node selection under GLV dynamics (why.md, generalizing predictor).
+#
+# Task: pick K sentinels ONCE on a fixed system, and learn a predictor that, from
+# only the sentinels' time series, estimates the global steady-state mean — and
+# GENERALIZES to brand-new interaction strengths (coupling) on the SAME system.
+#
+#   generator      : GLV, coupling in the TRAIN range, one fixed graph (graph_seed)
+#   val_generator  : SAME fixed graph (same graph_seed), DISJOINT coupling range
+#                    (both ranges stay on the stable side c < self_decay=1.0)
+#   env            : reward = decrease in the LEARNED predictor's relative error
+#   algo           : sentinel_dqn = Dueling Double n-step DQN + co-trained
+#                    Transformer set-predictor (per-episode-frozen reward predictor)
+#
+# Set env.num_conditions == generator.num_conditions.
+base: base.yaml
+
+run_name: sentinel_glv
+
+generator:                 # TRAIN: fixed system, weak-coupling range
+  type: sentinel
+  dynamics: glv
+  fixed_graph: true
+  graph_seed: 0
+  num_nodes: [60, 60]      # fixed size (fixed_graph uses num_nodes[0])
+  base: ba
+  m: 4
+  num_conditions: 5        # M dynamical conditions
+  timesteps: 120
+  steady_window: 40
+  coupling_range: [0.2, 0.5]   # TRAIN interaction-strength range (stable, c < 1)
+  r_range: [0.8, 1.2]
+  self_decay: 1.0
+  dt: 0.2
+  noise: 0.02
+  steady_tol: 0.05
+  store_traj: true
+
+val_generator:             # TEST: SAME system, DISJOINT coupling range (extrapolation)
+  type: sentinel
+  dynamics: glv
+  fixed_graph: true
+  graph_seed: 0            # SAME graph as train (same system)
+  num_nodes: [60, 60]
+  base: ba
+  m: 4
+  num_conditions: 5
+  timesteps: 120
+  steady_window: 40
+  coupling_range: [0.5, 0.8]   # DISJOINT from train, still stable (c < 1)
+  r_range: [0.8, 1.2]
+  self_decay: 1.0
+  dt: 0.2
+  noise: 0.02
+  steady_tol: 0.05
+  store_traj: true
+
+env:
+  type: sentinel
+  num_conditions: 5        # MUST match the generators
+  budget: 10               # K sentinels
+  selection_cost: 0.0      # lambda per pick
+  err_floor: 0.1           # scale-aware relative-error denominator floor
+
+algo:
+  type: sentinel_dqn
+  double: true
+  dueling: true
+  n_step: 3
+  gamma: 0.99
+  batch_size: 64
+  lr: 0.0003
+  target_update_period: 500
+  learn_start: 2000
+  pred_lr: 0.0003
+  predictor:               # Transformer set-predictor over sentinel trajectories
+    d: 64
+    n_heads: 4
+    tf_layers: 2
+    use_topo: true
+  model:
+    encoder:               # policy encoder: trajectory Transformer -> GraphSAGE
+      type: sentinel_encoder
+      hidden_dim: 64
+      num_layers: 3
+      dyn_dim: 32
+      n_heads: 4
+      transformer_layers: 2
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 16
+  iterations: 3000
+  eval_every: 200
+  n_valid: 64
+  baselines: [degree, adaptive_degree, random]

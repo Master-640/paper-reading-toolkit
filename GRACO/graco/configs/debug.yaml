@@ -1,0 +1,33 @@
+# Tiny end-to-end smoke config: runs in a few seconds on CPU.
+base: base.yaml
+
+run_name: debug
+device: cpu
+
+generator:
+  type: barabasi_albert
+  num_nodes: [12, 16]
+  m: 2
+
+env:
+  type: dismantling
+
+algo:
+  type: dqn
+  n_step: 3
+  batch_size: 16
+  learn_start: 32
+  target_update_period: 20
+  eps_decay_steps: 200
+  model:
+    encoder: {type: s2v, hidden_dim: 16, num_layers: 2}
+  buffer: {type: nstep_replay, capacity: 2000}
+
+trainer:
+  num_envs: 8
+  iterations: 30
+  eval_every: 15
+  log_every: 5
+  checkpoint_every: 100000
+  n_valid: 16
+  baselines: [degree, random]

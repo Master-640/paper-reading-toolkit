@@ -1,0 +1,36 @@
+# BALANCED GRAPH PARTITIONING / minimum bisection — split into two balanced
+# sides minimizing the edges cut.  Kernel of parallel-mesh partitioning, VLSI /
+# chip layout and domain decomposition.  Minimizes cut + (balance_penalty/n)·(Σ s_i)²
+# (the imbalance term is rank-1 → O(N+E)).
+base: base.yaml
+
+run_name: balanced_partition
+
+generator:
+  type: barabasi_albert       # any topology; BA has hub structure to partition
+  num_nodes: [60, 100]
+  m: 3
+
+env:
+  type: balanced_partition
+  balance_penalty: 1.0        # weight of the (Σ s_i)² imbalance term
+  report: cost                # objective = cut + penalty (use "cut" to report raw cut)
+
+algo:
+  type: dqn
+  double: true
+  dueling: true
+  n_step: 3
+  gamma: 0.99
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  eval_every: 100
+  baselines: [degree, random]

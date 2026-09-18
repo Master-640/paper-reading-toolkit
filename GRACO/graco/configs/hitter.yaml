@@ -1,0 +1,17 @@
+# HITTER — hypernetwork (hypergraph) dismantling via DRL. Dismantling on the hypergraph
+# (clique-expansion connectivity) with the FINDER bilinear Q-head + a hypergraph encoder.
+base: base.yaml
+run_name: hitter
+generator: {type: hypergraph, num_nodes: [30, 50], num_hyperedges: 20, hyperedge_size: 3}
+env: {type: dismantling}
+algo:
+  type: dqn
+  n_step: 5
+  double: false
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: hnhn, hidden_dim: 64, num_layers: 3}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, random]}

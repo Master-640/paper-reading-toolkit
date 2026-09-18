@@ -1,0 +1,70 @@
+# GRACO base config. Experiment configs `base: base.yaml` and override.
+# Every `type:` key selects a registered component; use a dotted path
+# (e.g. type: my_pkg.MyEncoder) for custom out-of-tree classes, or add modules
+# to `imports:` so their @register decorators run.
+
+seed: 0
+device: auto            # auto | cpu | cuda | cuda:0 ...
+deterministic: false
+run_name: graco
+imports: []             # e.g. [my_project.custom_encoders]
+
+# --- graph instance distribution -------------------------------------------
+generator:
+  type: barabasi_albert   # er | ba | ws | powerlaw_cluster | complete | lattice
+  num_nodes: [30, 50]     # [min, max] sampled per graph              # | regular | rgg | sbm | tree | hetero | multiplex | hypergraph
+  weighted: false
+  weight_dist: null       # normal | uniform | bimodal | negative_uniform | ...
+  m: 4
+
+# --- combinatorial optimization problem ------------------------------------
+env:
+  type: dismantling       # maxcut | spinglass | mvc | mis | dismantling | dismantling_cost
+  reward_scale: 1.0
+  max_steps_frac: 1.0
+
+# --- RL algorithm ----------------------------------------------------------
+algo:
+  type: dqn               # dqn | qrdqn | ppo | a2c | reinforce
+  gamma: 1.0
+  n_step: 5
+  batch_size: 64
+  lr: 0.0001
+  double: true
+  dueling: false
+  huber: true
+  target_update_period: 500
+  learn_start: 1000
+  learn_freq: 1
+  grad_clip: 10.0
+  eps_start: 1.0
+  eps_end: 0.05
+  eps_decay_steps: 20000
+  model:
+    encoder:
+      type: s2v           # gcn | graphsage | gin | gat | gatv2 | s2v | gatedgcn | pna | mpnn | graph_transformer | edgeconv | rgcn | hgnn
+      hidden_dim: 64
+      num_layers: 3
+      norm: l2
+    head:
+      type: q_node        # q_node | dueling_q | quantile_q | actor | critic
+      use_graph_context: true
+  buffer:
+    type: nstep_replay    # nstep_replay (uniform) | prioritized_replay (PER)
+    capacity: 50000
+
+# --- training loop ---------------------------------------------------------
+trainer:
+  num_envs: 16
+  iterations: 2000
+  eval_every: 200
+  log_every: 20
+  checkpoint_every: 500
+  n_valid: 64
+  baselines: [degree, random]
+  log_dir: runs/${run_name}
+
+logger:
+  tensorboard: true
+  wandb: false
+  wandb_project: graco

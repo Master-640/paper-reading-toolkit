@@ -1,0 +1,35 @@
+# Maximum Independent Set on UNIT-DISK graphs — the combinatorial problem solved
+# on Rydberg-atom quantum hardware (Ebadi et al., "Quantum optimization of maximum
+# independent set using Rydberg atom arrays", Science 2022).  Atoms placed in the
+# plane with a blockade radius = a random geometric graph (RGG); the maximum
+# independent set is the ground state.  Same GRACO `mis` env, unit-disk topology.
+base: base.yaml
+
+run_name: rydberg_mis
+
+generator:
+  type: rgg                   # random geometric graph = unit-disk (blockade) graph
+  num_nodes: [80, 120]
+  radius: 0.16                # blockade radius (connection threshold)
+
+env:
+  type: mis                   # maximum independent set (blockade-respecting set)
+
+algo:
+  type: dqn
+  double: true
+  dueling: true
+  n_step: 3
+  gamma: 0.99
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  eval_every: 100
+  baselines: [degree, random]

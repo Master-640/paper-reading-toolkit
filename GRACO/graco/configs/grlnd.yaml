@@ -1,0 +1,18 @@
+# GRLND — single-step graph-RL dismantling (Qu et al. 2025). One forward pass emits
+# per-node Bernoulli deletion probabilities; a removal mask is sampled and trained with
+# REINFORCE on (connectivity disruption + removal sparsity). Runs through the Trainer's
+# single-step path; evaluated by a greedy descending-probability rollout.
+base: base.yaml
+run_name: grlnd
+generator: {type: barabasi_albert, num_nodes: [40, 60], m: 3}
+env: {type: dismantling}
+algo:
+  type: grlnd
+  lr: 0.0005
+  sparsity_coef: 0.3
+  entropy_coef: 0.01
+  num_samples: 8
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: q_node}
+trainer: {num_envs: 32, iterations: 4000, eval_every: 300, baselines: [degree, adaptive_degree, corehd, random]}

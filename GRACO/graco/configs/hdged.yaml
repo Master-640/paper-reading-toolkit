@@ -1,0 +1,19 @@
+# HDGED — heterogeneous combat-network disintegration with a relation-specific
+# (RGCN) encoder. Same S->D->I combat-chain objective as SHATTER; the difference
+# is the encoder: per-relation (S-D / D-I / D-D) message transforms instead of
+# type-aware attention. Reuses dismantling + combat generator + rgcn + finder_q.
+base: base.yaml
+run_name: hdged
+generator: {type: combat, role_fracs: [0.4, 0.3, 0.3], p_sd: 0.25, p_di: 0.25, p_dd: 0.1, num_nodes: [40, 60]}
+env: {type: combat_dismantling}
+algo:
+  type: dqn
+  n_step: 5
+  double: false
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: rgcn, hidden_dim: 64, num_layers: 3}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, random]}

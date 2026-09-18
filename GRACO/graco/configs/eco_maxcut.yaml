@@ -1,0 +1,42 @@
+# ECO-DQN-style flip-IMPROVEMENT MaxCut (Barrett et al., 2020).
+# Unlike the monotone construction env `maxcut`, this starts from a full spin
+# configuration and repeatedly FLIPS nodes (revisitable) over a ~2n horizon,
+# rewarded only when a new best-so-far cut is found. Complementary paradigm.
+base: base.yaml
+
+run_name: eco_maxcut
+
+generator:
+  type: er                  # Erdos-Renyi
+  num_nodes: [40, 60]
+  p: 0.15
+  weighted: true
+  weight_dist: bimodal      # +/-1 couplings (spin-glass-like)
+
+env:
+  type: eco_maxcut
+  horizon_frac: 2.0         # 2n flips per episode
+
+algo:
+  type: dqn
+  n_step: 2
+  gamma: 0.99
+  double: true
+  dueling: true
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder:
+      type: gcn
+      hidden_dim: 64
+      num_layers: 3
+    head:
+      type: dueling_q
+  buffer:
+    type: nstep_replay
+    capacity: 50000
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  baselines: [random]

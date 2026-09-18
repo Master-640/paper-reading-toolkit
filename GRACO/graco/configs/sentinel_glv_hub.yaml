@@ -1,0 +1,81 @@
+# Sentinel node selection, GLV **hub regime** (un-normalised / degree-weighted
+# coupling) — the setting where the transductive sentinel-mean is a biased,
+# coupling-dependent estimator, so the learned predictor is genuinely needed.
+#
+# Compare eval/objective (learned predictor) vs eval/objective_analytic (shadow
+# sentinel-mean) on the DISJOINT coupling range: the gap is the value added by the
+# Transformer readout. Same system (graph_seed) across train and the disjoint val.
+base: base.yaml
+
+run_name: sentinel_glv_hub
+
+generator:                 # TRAIN: fixed system, weak hub coupling (stable, c < 1/λ_max)
+  type: sentinel
+  dynamics: glv
+  fixed_graph: true
+  graph_seed: 0
+  num_nodes: [40, 40]
+  base: ba
+  m: 4
+  num_conditions: 5
+  timesteps: 160
+  steady_window: 50
+  row_normalize: false     # degree-weighted coupling => hubs dominate
+  coupling_range: [0.02, 0.05]
+  r_range: [0.5, 1.5]
+  self_decay: 1.0
+  dt: 0.1
+  noise: 0.02
+  steady_tol: 0.05
+  store_traj: true
+
+val_generator:             # TEST: SAME system, DISJOINT hub coupling range
+  type: sentinel
+  dynamics: glv
+  fixed_graph: true
+  graph_seed: 0
+  num_nodes: [40, 40]
+  base: ba
+  m: 4
+  num_conditions: 5
+  timesteps: 160
+  steady_window: 50
+  row_normalize: false
+  coupling_range: [0.05, 0.08]   # DISJOINT from train, still stable
+  r_range: [0.5, 1.5]
+  self_decay: 1.0
+  dt: 0.1
+  noise: 0.02
+  steady_tol: 0.05
+  store_traj: true
+
+env:
+  type: sentinel
+  num_conditions: 5
+  budget: 8                # K sentinels
+  selection_cost: 0.0
+  err_floor: 0.1
+
+algo:
+  type: sentinel_dqn
+  double: true
+  dueling: true
+  n_step: 3
+  gamma: 0.99
+  batch_size: 64
+  lr: 0.0003
+  target_update_period: 500
+  learn_start: 1000
+  pred_lr: 0.0001          # smaller LR, train longer
+  predictor: {d: 64, n_heads: 4, tf_layers: 2, use_topo: true}
+  model:
+    encoder: {type: sentinel_encoder, hidden_dim: 64, num_layers: 3, dyn_dim: 32, n_heads: 4, transformer_layers: 2}
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 16
+  iterations: 3000
+  eval_every: 100
+  n_valid: 64
+  baselines: [degree, adaptive_degree, random]

@@ -1,0 +1,34 @@
+# GRAPH k-COLORING — assign one of k colours to every node minimizing the number
+# of monochromatic (conflicting) edges.  Constructive labeling MDP via the k-label
+# action head (a learned vertex+colour ordering; a revisitable recolor/improvement
+# variant is future work).
+base: base.yaml
+
+run_name: graph_coloring
+
+generator:
+  type: erdos_renyi
+  num_nodes: [40, 60]
+  p: 0.12
+
+env:
+  type: graph_coloring
+  k: 3                       # number of colours
+
+algo:
+  type: label_dqn
+  double: true
+  n_step: 3
+  gamma: 1.0                 # per-step −Δconflicts telescopes to −(final conflicts)
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: q_label}
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  eval_every: 100
+  baselines: []

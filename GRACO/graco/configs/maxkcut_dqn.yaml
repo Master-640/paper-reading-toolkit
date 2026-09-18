@@ -1,0 +1,33 @@
+# MAX-k-CUT — partition nodes into k groups maximizing the number of edges whose
+# endpoints fall in different groups (generalizes MaxCut, k=2).  Uses the k-label
+# action head: each step assigns one of k colours to an unassigned node.
+base: base.yaml
+
+run_name: maxkcut
+
+generator:
+  type: erdos_renyi
+  num_nodes: [40, 60]
+  p: 0.15
+
+env:
+  type: maxkcut
+  k: 3                       # number of parts/colours
+
+algo:
+  type: label_dqn            # joint (node, colour) action over the [N,k] head
+  double: true
+  n_step: 3
+  gamma: 1.0                 # undiscounted: per-step reward telescopes to the final cut
+  target_update_period: 500
+  learn_start: 1000
+  model:
+    encoder: {type: gcn, hidden_dim: 64, num_layers: 3}
+    head: {type: q_label}    # num_labels (=k) is injected from the env
+  buffer: {type: nstep_replay, capacity: 50000}
+
+trainer:
+  num_envs: 32
+  iterations: 3000
+  eval_every: 100
+  baselines: []              # node-selection baselines can't emit a colour; policy-only eval

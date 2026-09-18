@@ -1,0 +1,54 @@
+# Sentinel node selection (why.md): pick K sentinels whose steady-state mean
+# estimates the global steady-state mean across M dynamical conditions.
+#   env  : reward = Δ(cross-condition relative MAE) − λ, budget K
+#   model: trajectory Transformer + GraphSAGE (dynamics + topology encoder)
+#   algo : Dueling Double n-step DQN (reused as-is)
+# Set env.num_conditions == generator.num_conditions.
+base: base.yaml
+
+run_name: sentinel
+
+generator:
+  type: sentinel
+  num_nodes: [30, 50]
+  base: ba                 # ba | er
+  m: 4
+  num_conditions: 5        # M dynamical conditions
+  timesteps: 40
+  steady_window: 10
+  noise: 0.02
+  store_traj: true         # keep trajectories for the Transformer encoder
+
+env:
+  type: sentinel
+  num_conditions: 5        # MUST match the generator
+  budget: 10               # K sentinels (fixed-budget minimal closed loop)
+  selection_cost: 0.0      # λ per pick (0 => pure error improvement under budget K)
+
+algo:
+  type: dqn
+  double: true             # Double-DQN
+  dueling: true            # Dueling head
+  n_step: 3
+  gamma: 0.99
+  batch_size: 64
+  lr: 0.0003
+  target_update_period: 500
+  learn_start: 2000
+  model:
+    encoder:               # trajectory Transformer -> GraphSAGE (falls back to steady-mean if no traj)
+      type: sentinel_encoder
+      hidden_dim: 64
+      num_layers: 3
+      dyn_dim: 32
+      n_heads: 4
+      transformer_layers: 2
+    head: {type: dueling_q}
+  buffer: {type: nstep_replay, capacity: 100000}
+
+trainer:
+  num_envs: 16
+  iterations: 3000
+  eval_every: 200
+  n_valid: 64
+  baselines: [degree, adaptive_degree, random]

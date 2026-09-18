@@ -1,0 +1,39 @@
+# Network dismantling evaluated/trained on REAL networks (file datasets).
+#
+# The `dataset` generator loads real graphs from disk in many formats
+# (edgelist/GML/GraphML/Matrix-Market/Pajek/Gset/DIMACS, incl. .gz). Point it at
+# a file / glob / directory, or override from the CLI:
+#
+#   graco benchmark --config configs/dismantling_real.yaml --data snap-facebook
+#   graco benchmark --config configs/dismantling_real.yaml --data 'data/nets/*.edges'
+#   graco train     --config configs/dismantling_real.yaml --data data/nets --data-mode random
+#
+# (`graco datasets` lists built-in downloadable datasets; downloads are cached.)
+base: base.yaml
+
+run_name: dismantling_real
+
+generator:
+  type: dataset
+  path: data/networks        # a file / glob / directory of real graphs (override with --data)
+  fmt: auto                  # auto | edgelist | gml | graphml | mtx | pajek | gset | dimacs
+  mode: all                  # all = whole set as one batch (eval); random = sample (train)
+  max_nodes: 5000            # skip graphs larger than this (memory guard)
+
+env:
+  type: finder_dismantling   # supplies FINDER's graph aux_feat readout (matches finder.yaml)
+  cost_mode: unit
+
+algo:
+  type: finder
+  n_step: 5
+  double: false
+  model:
+    encoder: {type: graphsage, hidden_dim: 64, num_layers: 3, aggr: sum, residual: false}
+    head: {type: finder_q, aux_dim: 4}
+
+trainer:
+  num_envs: 8
+  iterations: 2000
+  eval_every: 200
+  baselines: [degree, adaptive_degree, collective_influence, betweenness, random]

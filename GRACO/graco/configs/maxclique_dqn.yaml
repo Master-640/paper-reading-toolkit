@@ -1,0 +1,13 @@
+# Maximum Clique on Erdős–Rényi graphs, GIN encoder + Double DQN.
+base: base.yaml
+run_name: maxclique_dqn
+generator: {type: erdos_renyi, num_nodes: [40, 60], p: 0.25}
+env: {type: maxclique}
+algo:
+  type: dqn
+  n_step: 3
+  double: true
+  model:
+    encoder: {type: gin, hidden_dim: 64, num_layers: 4}
+    head: {type: q_node}
+trainer: {num_envs: 32, iterations: 3000, baselines: [degree, random]}

@@ -1,0 +1,19 @@
+# SHATTER — combat-network disintegration via DRL. Remove Sensor/Decision/Influence
+# nodes to destroy S->D->I combat chains; reward = -(normalized operational
+# capability), so the return is -ANOC. Reuses dismantling + combat generator +
+# a relation-aware HAN encoder + finder_q.
+base: base.yaml
+run_name: shatter
+generator: {type: combat, role_fracs: [0.4, 0.3, 0.3], p_sd: 0.25, p_di: 0.25, p_dd: 0.1, num_nodes: [40, 60]}
+env: {type: combat_dismantling}
+algo:
+  type: dqn
+  n_step: 5
+  double: false
+  gamma: 1.0
+  learn_start: 2000
+  model:
+    encoder: {type: han, hidden_dim: 64, num_layers: 3, heads: 4}
+    head: {type: finder_q, aux_dim: 0}
+  buffer: {type: nstep_replay, capacity: 100000}
+trainer: {num_envs: 16, iterations: 5000, eval_every: 300, baselines: [degree, adaptive_degree, random]}

@@ -1,0 +1,69 @@
+{
+  "id": "enso-causalnet",
+  "title": "ENSO-CausalNet: Integrating Causal Inference Into Deep Learning for Robust ENSO Prediction",
+  "short": "ENSO-CausalNet",
+  "authors": "Yuehan Cui, Bin Mu, Shijin Yuan, Bo Qin",
+  "venue": "Geophysical Research Letters",
+  "year": 2025,
+  "doi": "10.1029/2025GL118701",
+  "type": "Research Letter",
+  "role": "同期对标",
+  "accent": "#059669",
+  "pos": { "col": 2, "row": 0 },
+  "oneline": "把因果推断引入深度学习，让 ENSO 预报建立在真实因果关系而非相关性上。",
+
+  "problem": {
+    "statement": "气候模态之间的相互作用本质上是因果的；而深度学习虽擅长气候预测，其可解释性却仅限于验证已知的相关性。作者要让预测建立在真实因果关系之上。",
+    "difficulty": "从观测数据中辨识真正的因果关系（而非相关）本身困难；且输入维度增大时因果结构的学习会退化，存在精度与可解释性的取舍。",
+    "domain": ["enso-dynamics", "climate-mode-forecasting"],
+    "task": "multi-step-forecasting",
+    "object": "ENSO（Niño3.4 指数）"
+  },
+
+  "methods": ["causal-inference", "deep-learning", "causal-pathway-analysis", "attention-attribution"],
+
+  "data": {
+    "pretrain": [],
+    "eval": ["ENSO 观测/再分析资料（Niño3.4）", "多海盆海气变量（热带外太平洋、大西洋、印度洋）"]
+  },
+
+  "cites": [
+    {
+      "target": "enso-complexity",
+      "relation": "background",
+      "where": "正文引言 + 参考文献",
+      "evidence": "正文：\"ENSO variability arises from complex air-sea feedbacks (Rasmusson & Carpenter, 1982; Timmermann et al., 2018), such as the Bjerknes feedback (Bjerknes, 1969)\"；参考文献：\"Timmermann, A., An, S.-I., Kug, J.-S., Jin, F.-F., Cai, W., Capotondi, A., et al. (2018). El Niño–Southern Oscillation complexity. Nature, 559(7715), 535–545.\""
+    }
+  ],
+
+  "baselines": ["传统深度学习 ENSO 预报模型", "该组自己的 ENSO-ASC / ENSO-GTC / ENSO-MC / CAU 系列"],
+
+  "contributions": [
+    "提出「因果推断整合进数据驱动建模」的新范式，使预测基于真实因果关系",
+    "ENSO-CausalNet 实现 Niño3.4 指数长达 22 个月的有效 ENSO 预报",
+    "揭示影响 ENSO 的主导物理过程随提前期变化；给出 Bjerknes 反馈与热带外太平洋、大西洋、印度洋海气相互作用驱动 ENSO 的不同因果路径",
+    "反直觉结论：输入维度增大时模型可能学到不完整的因果关系，导致预报技巧下降",
+    "结论：预报能力关键取决于对因果关系的完整理解"
+  ],
+
+  "numbers": [
+    ["ENSO 有效预报", "Niño3.4 达 22 个月"]
+  ],
+
+  "limitations": [
+    "只做 ENSO 单一模态，不做多模态统一预报",
+    "「输入维度越大因果学得越不完整」这个结论对高维输入方案（如 UniCM 的 5 变量场）是个值得追的问题"
+  ],
+
+  "reusable": [
+    "「因果路径随 lead time 变化」的分析角度，可以用来审视 UniCM 注意力权重是否也只是相关性",
+    "22 个月 vs UniCM 19 个月 —— 两者是同一问题的两条路线的直接对照数据点",
+    "该组从 ENSO-ASC(2021) → ENSO-GTC(2022) → ENSO-MC(2022) → CAU(2024) → CausalNet(2025) 的演进线，是一条完整的「ENSO 深度学习」方法谱系"
+  ],
+
+  "notes": [
+    ["全文纯文本（可检索）", "ENSO-CausalNet.txt"]
+  ],
+  "pdf": "ENSO-CausalNet.pdf",
+  "feishu": {}
+}

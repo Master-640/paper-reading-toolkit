@@ -1,0 +1,65 @@
+{
+  "id": "tritoncast",
+  "title": "Advanced Long-term Earth System Forecasting (TritonCast)",
+  "short": "TritonCast",
+  "authors": "Hao Wu, Yuan Gao, Ruijian Gou, Xian Wu, Chuhan Wu, Huahui Yi et al.（清华 + 腾讯等，通讯 Xiaomeng Huang）",
+  "venue": "arXiv:2505.19432v3 [cs.LG]",
+  "year": 2026,
+  "doi": "arXiv:2505.19432v3",
+  "type": "Preprint",
+  "role": "技术对标",
+  "accent": "#ea580c",
+  "pos": { "col": 1, "row": 0 },
+  "oneline": "用「潜动力学核心 + 外结构融合」解决 AI 地球系统模型在长时自回归中的失稳与谱偏差。",
+
+  "problem": {
+    "statement": "数据驱动的 AI 模型在做长时间自回归时不稳定，误差失控放大；根源是固有的谱偏差——高频、小尺度过程表征不足。",
+    "difficulty": "跨尺度相互作用导致的谱偏差难以用单一分辨率网络解决；要在数月至数年尺度上保持无漂移，需要架构层面的机制而非调参。",
+    "domain": ["earth-system-forecasting", "long-horizon-autoregression"],
+    "task": "multi-step-forecasting",
+    "object": "大气与海洋场（全球地球系统）"
+  },
+
+  "methods": ["latent-dynamical-core", "nested-grid-inspired-architecture", "multi-scale-fusion", "spectral-bias-mitigation", "autoregressive-rollout"],
+
+  "data": {
+    "pretrain": [],
+    "eval": ["大气 SOTA 基准", "海洋涡旋预报", "2500 天连续测试期"]
+  },
+
+  "cites": [],
+
+  "baselines": ["现有 AI 地球系统模型（如 FuXi / GraphCast 类）", "数值模式"],
+
+  "contributions": [
+    "诊断长时自回归失稳的根源：固有谱偏差导致高频小尺度过程表征不足、误差失控放大",
+    "借鉴数值模式嵌套网格，设计：潜动力学核心保证粗尺度宏观演化的长期稳定 + 外层结构融合细粒度局地细节",
+    "大气：SOTA 精度 + 年尺度自回归稳定性 + 跨越整个 2500 天测试期的多年无漂移气候模拟",
+    "海洋：涡旋预报技巧延至 120 天；展现零样本跨分辨率泛化",
+    "消融显示性能来自架构核心组件的协同作用，而非单一模块"
+  ],
+
+  "numbers": [
+    ["无漂移模拟时长", "整个 2500 天测试期"],
+    ["海洋涡旋预报", "120 天"],
+    ["额外能力", "零样本跨分辨率泛化"],
+    ["篇幅", "154 页"]
+  ],
+
+  "limitations": [
+    "是地球系统通用模型（大气 + 海洋场），不是模态/指数预报，评价口径与 UniCM 不同",
+    "PDF 47.9 MB / 154 页，本仓库不收录原文"
+  ],
+
+  "reusable": [
+    "「潜动力学核心 + 外结构融合」是解决长时自回归漂移的现成配方，可直接对照 UniCM 的 24 个月 rollout",
+    "谱偏差诊断视角：它解释了为什么纯场级模型在长 lead 上会退化",
+    "零样本跨分辨率泛化 → 与「5° 网格够用」的论证可以互相印证"
+  ],
+
+  "notes": [
+    ["全文纯文本（可检索）", "TritionCast.txt"]
+  ],
+  "pdf": "TritionCast.pdf",
+  "feishu": {}
+}

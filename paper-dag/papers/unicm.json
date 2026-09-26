@@ -1,0 +1,86 @@
+{
+  "id": "unicm",
+  "title": "Learning the coupled dynamics of global climate modes (UniCM)",
+  "short": "UniCM",
+  "authors": "Yuan Yuan, Jingtao Ding, Zhongpu Qiu, Jingfang Fan, Yong Li",
+  "venue": "Nature Machine Intelligence 8, 930–941",
+  "year": 2026,
+  "doi": "10.1038/s42256-026-01245-5",
+  "type": "Research Article",
+  "role": "当前主攻",
+  "accent": "#2563eb",
+  "pos": { "col": 2, "row": 1 },
+  "oneline": "把 7 个全球气候模态当作一个互联系统，统一做 24 个月预报。",
+
+  "problem": {
+    "statement": "全球气候模态（ENSO、IOD、TNA、NPMM、SPMM、IOB、SIOD）通过跨洋盆遥相关耦合为一个系统；现有方法要么孤立预测单个模态，要么只做简化配对建模，把整个耦合系统当作整体预测仍是未解难题。",
+    "difficulty": "模态跨越大范围时空尺度，通过非线性、状态依赖的耦合相互作用，耦合强度随季节与背景态变化；非 ENSO 模态的物理理解本身有限；训练数据只能来自气候模式（再分析记录太短）。",
+    "domain": ["climate-mode-forecasting", "enso-dynamics"],
+    "task": "multi-step-forecasting",
+    "object": "7 个全球气候模态 + 5 个物理场"
+  },
+
+  "methods": ["spatiotemporal-transformer", "dual-branch-architecture", "cross-view-guidance", "mode-to-patch-guidance", "attention-interpretability", "sim-to-real-transfer"],
+
+  "data": {
+    "pretrain": ["CMIP6 historical 1850–2014（筛选后 4 套模拟：CESM2-FV2, CESM2-WACCM-FV2, EC-Earth3-CC, EC-Earth3-Veg-LR）"],
+    "eval": ["ORAS5（主）", "ERA5", "GODAS", "SODA v2.2.4"]
+  },
+
+  "cites": [
+    {
+      "target": "enso-complexity",
+      "relation": "theoretical-basis",
+      "where": "ref. 8",
+      "evidence": "ref. 8: Timmermann, A. et al. El Niño–Southern Oscillation complexity. Nature 559, 535–545 (2018)."
+    }
+  ],
+
+  "baselines": ["XRO (ref. 13)", "DESN (ref. 25)", "CNN (ref. 34)", "ResoNet (ref. 35)", "FuXi-S2S", "CAS-Canglong"],
+
+  "contributions": [
+    "把 7 个全球气候模态放在一个模型里统一预测，而不是 one-mode-one-model",
+    "双分支时空 Transformer：Globalformer（5 个物理场）+ Modeformer（7 个模态指数），显式建模两个层级的耦合",
+    "mode-to-patch guidance：把模态表征作为加性偏置注入 Globalformer 的编码器与解码器（解码器侧用预测出的未来模态轨迹）",
+    "物理真实性：不只预测抽象指数，还给场级 SST 预报，并能重现观测的跨模态滞后相关",
+    "可解释性：用注意力找出极端事件的先兆与跨模态相互作用结构",
+    "数据效率 + sim-to-real：CMIP6 训练直接迁移再分析；40% 训练样本即达 >90% 性能"
+  ],
+
+  "numbers": [
+    ["ENSO 有效提前期", "ACC > 0.5 维持 19 个月（DESN 16、CNN/Transformer 15）"],
+    ["IOD 有效提前期", "7 个月"],
+    ["其他少被研究模态", "平均提升 >22%"],
+    ["误差", "RMSE 相对 baseline 降低 14.1–17.9%"],
+    ["12 个月 lead 的 ACC", "0.78–0.8（ERA5 / GODAS / SODA）"],
+    ["春季可预报性障碍", "目标落在 MAM/AMJ 时维持 ACC>0.5 到 14 个月"],
+    ["对 S2S 大模型（12 月全球平均）", "ACC 0.379 / RMSE 0.465 vs CAS-Canglong 0.262/0.505、FuXi-S2S 0.207/0.515"],
+    ["训练样本", "1,945（12 月输入 + 24 月目标，1 月步长）"]
+  ],
+
+  "limitations": [
+    "最核心的 mode-to-patch guidance 从未被单独消融：GlobalFormer-only 对照同时删掉了引导 + 模态分支 + 辅助损失，增益归因不成立",
+    "四个 CMIP6 模拟实质只等于 2 个独立模式家族，且筛选标准未公开",
+    "辅助物理场（风应力、温跃层、上层海洋温度）不作独立验证目标",
+    "λ 取值正文（λ1=1, λ2=1, λ3=0.01）与 SI（λ1=λ3=1.0, λ2=0.01）互相矛盾",
+    "样本账（1,945）与「retained four simulations」的说法对不上",
+    "经纬域三处口径不一致（40°S–0°N / 40°S–40°N / Np=12×72）"
+  ],
+
+  "reusable": [
+    "「宏观状态变量 ↔ 细粒度物理场」的双向耦合建模，可平移到海洋气象大模型（大尺度指数/环流模态 ↔ 高分辨率温盐流场）",
+    "CMIP6 预训练 → 再分析零样本迁移，且微调无显著提升：对「缺长期观测、仿真数据充足」的场景极有价值",
+    "可解释性作为卖点：注意力图 → 空间先兆区域；跨模态注意力 → 相互作用强度的时间放大",
+    "可复用 baseline 清单：XRO、DESN、ResoNet、CNN/Transformer、FuXi-S2S、CAS-Canglong"
+  ],
+
+  "notes": [
+    ["论文阅读（六段框架）", "UniCM-论文阅读.md"],
+    ["材料清单与阅读索引", "UniCM-材料清单与阅读索引.md"],
+    ["审稿争议要点", "UniCM-审稿争议要点.md"],
+    ["SI 图表页码索引", "UniCM-SI图表页码索引.md"],
+    ["正文网页可获取部分", "UniCM_正文网页可获取部分.md"]
+  ],
+  "pdf": "UniCM.pdf",
+  "feishu": { "wiki": "SpSTwsApuipnh5kkt7fc0cKZnkf", "docx": "Q5YSdUu7PoIsIkxQPSac3eY7n6g", "label": "UniCM——论文阅读" }
+}

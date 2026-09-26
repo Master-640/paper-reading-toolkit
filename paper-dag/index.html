@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>论文 DAG 阅读地图 · week2</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#ffffff; --ink:#0f172a; --muted:#64748b;
+    --line:#e2e8f0; --soft:#f8fafc;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:#eef2f7; color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:14px; line-height:1.7;
+  }
+  header{
+    background:var(--bg); color:#fff; padding:12px 20px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    box-shadow:0 2px 12px rgba(15,23,42,.18); position:relative; z-index:10;
+  }
+  header h1{font-size:16px; margin:0; font-weight:700; letter-spacing:.3px}
+  header .sub{font-size:12px; color:#94a3b8}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px}
+  .legend span{display:flex; align-items:center; gap:6px; color:#cbd5e1}
+  .swatch{width:22px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block}
+  .cfg{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12px; color:#94a3b8}
+  .cfg input{
+    background:#1e293b; border:1px solid #334155; color:#e2e8f0;
+    border-radius:6px; padding:4px 8px; width:230px; font-size:12px; font-family:inherit;
+  }
+
+  main{display:flex; height:calc(100vh - 58px); min-height:0}
+  #dagWrap{
+    flex:1 1 auto; overflow:auto; padding:18px;
+    background:
+      radial-gradient(circle at 1px 1px, #d7dee8 1px, transparent 0) 0 0/22px 22px;
+  }
+  #dag{position:relative; width:1340px; height:480px}
+  #edges{position:absolute; inset:0; width:100%; height:100%; overflow:visible}
+
+  .node{
+    position:absolute; width:310px; height:130px; padding:12px 14px 12px 18px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 2px 6px rgba(15,23,42,.06); cursor:pointer;
+    transition:transform .12s, box-shadow .12s, opacity .12s;
+    overflow:hidden; z-index:3;
+  }
+  .node::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--accent)}
+  .node:hover{transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,23,42,.14)}
+  .node.sel{box-shadow:0 0 0 2.5px var(--accent), 0 8px 22px rgba(15,23,42,.16)}
+  .node.dim{opacity:.32}
+  .node .kind{
+    display:inline-block; font-size:11px; font-weight:700; color:#fff;
+    background:var(--accent); border-radius:999px; padding:1px 9px; margin-bottom:6px;
+  }
+  .node h3{margin:0 0 2px; font-size:15px; font-weight:700; line-height:1.3}
+  .node .meta{font-size:11px; color:var(--muted); margin-bottom:6px}
+  .node .one{font-size:12px; color:#334155; line-height:1.55}
+
+  #panel{
+    flex:0 0 470px; background:var(--panel); border-left:1px solid var(--line);
+    overflow:auto; padding:20px 22px 60px;
+  }
+  #panel h2{margin:0 0 4px; font-size:20px; line-height:1.35}
+  #panel .pmeta{font-size:12px; color:var(--muted); margin-bottom:4px}
+  #panel .pkind{
+    display:inline-block; font-size:11px; font-weight:700; color:#fff; border-radius:999px;
+    padding:2px 10px; margin:8px 0 14px;
+  }
+  .sec{margin:18px 0 0}
+  .sec > .st{
+    font-size:12px; font-weight:700; color:#0f172a; letter-spacing:.4px;
+    border-left:3px solid #0f172a; padding-left:8px; margin-bottom:8px;
+  }
+  .sec ul{margin:0; padding-left:18px}
+  .sec li{margin:5px 0}
+  code{
+    background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px;
+    padding:0 4px; font-size:12px;
+    font-family:Consolas,"Cascadia Mono",Menlo,monospace;
+  }
+  table.nums{width:100%; border-collapse:collapse; font-size:12.5px}
+  table.nums td{padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+  table.nums td:first-child{color:var(--muted); width:44%}
+  .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 4px}
+  a.btn{
+    display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+    background:#0f172a; color:#fff; border-radius:8px; padding:7px 14px;
+    font-size:13px; font-weight:600; transition:background .12s;
+  }
+  a.btn:hover{background:#1e293b}
+  a.btn.alt{background:#2563eb} a.btn.alt:hover{background:#1d4ed8}
+  a.btn.ghost{background:#fff; color:#0f172a; border:1px solid #cbd5e1}
+  a.btn.ghost:hover{background:#f1f5f9}
+  a.btn.disabled{background:#e2e8f0; color:#94a3b8; pointer-events:none}
+  .rel{
+    border:1px solid var(--line); border-radius:9px; padding:9px 11px; margin:7px 0;
+    font-size:12.5px; background:var(--soft);
+  }
+  .rel .dir{font-size:11px; font-weight:700; margin-right:6px}
+  .rel .bt{font-size:10.5px; font-weight:700; color:#fff; border-radius:999px; padding:1px 7px; margin-right:7px}
+  .rel .who{font-weight:700}
+  .rel .why{color:#475569; margin-top:3px; display:block}
+  .note{font-size:12px; color:var(--muted); background:#fffbeb; border:1px solid #fde68a;
+        border-radius:8px; padding:8px 10px; margin-top:10px}
+  ul.plain{padding-left:18px; margin:0}
+  ul.plain li{margin:4px 0}
+  .empty{color:var(--muted); text-align:center; margin-top:80px; font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>论文 DAG 阅读地图</h1>
+    <div class="sub">week2 · 5 篇 · 点节点看详情</div>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="cfg">
+    <label>飞书域名</label>
+    <input id="fbase" type="text" spellcheck="false" />
+  </div>
+</header>
+
+<main>
+  <div id="dagWrap">
+    <div id="dag">
+      <svg id="edges"></svg>
+    </div>
+  </div>
+  <aside id="panel"><div class="empty">← 点左侧任意一个节点</div></aside>
+</main>
+
+<script src="data.js"></script>
+<script>
+/* ---------------- 布局常量 ---------------- */
+const NODE_W = 310, NODE_H = 130;
+const COL_X  = [30, 400, 770];
+const ROW_Y  = [50, 300];
+
+/* ---------------- 飞书域名（可改，存 localStorage） ---------------- */
+const fbaseInput = document.getElementById('fbase');
+fbaseInput.value = localStorage.getItem('fbase') || FEISHU_BASE_DEFAULT;
+fbaseInput.addEventListener('input', () => {
+  localStorage.setItem('fbase', fbaseInput.value.trim().replace(/\/+$/, ''));
+  if (selected) renderPanel(selected);
+});
+const getBase = () => (localStorage.getItem('fbase') || FEISHU_BASE_DEFAULT).replace(/\/+$/, '');
+
+const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+const nodeCenter = n => ({ x: COL_X[n.col] + NODE_W / 2, y: ROW_Y[n.row] + NODE_H / 2 });
+const nodeRight  = n => ({ x: COL_X[n.col] + NODE_W, y: ROW_Y[n.row] + NODE_H / 2 });
+const nodeLeft   = n => ({ x: COL_X[n.col], y: ROW_Y[n.row] + NODE_H / 2 });
+
+/* ---------------- 图例 ---------------- */
+document.getElementById('legend').innerHTML = Object.entries(BASIS).map(([k, v]) =>
+  `<span title="${v.desc}"><i class="swatch" style="border-top-color:${v.color};border-top-style:${v.dash ? 'dashed' : 'solid'}"></i>${v.label}</span>`
+).join('') + `<span style="color:#64748b">｜连线是阅读地图，非引用关系</span>`;
+
+/* ---------------- 建节点 ---------------- */
+const dag = document.getElementById('dag');
+NODES.forEach(n => {
+  const d = document.createElement('div');
+  d.className = 'node';
+  d.id = 'node-' + n.id;
+  d.style.left = COL_X[n.col] + 'px';
+  d.style.top = ROW_Y[n.row] + 'px';
+  d.style.setProperty('--accent', n.accent);
+  d.innerHTML = `
+    <span class="kind">${n.kind}</span>
+    <h3>${n.title}</h3>
+    <div class="meta">${n.subtitle}</div>
+    <div class="one">${n.oneline}</div>`;
+  d.addEventListener('click', () => select(n.id));
+  d.addEventListener('mouseenter', () => hover(n.id));
+  d.addEventListener('mouseleave', () => hover(null));
+  dag.appendChild(d);
+});
+
+/* ---------------- 建边 ---------------- */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('edges');
+const edgeEls = [];
+
+EDGES.forEach((e, i) => {
+  const a = byId[e.from], b = byId[e.to];
+  let d, mid;
+  if (a.col === b.col) {                       // 同列：向右侧鼓出
+    const p1 = nodeRight(a), p2 = nodeRight(b);
+    const off = 74;
+    d = `M ${p1.x} ${p1.y} C ${p1.x + off} ${p1.y}, ${p2.x + off} ${p2.y}, ${p2.x} ${p2.y}`;
+    mid = { x: (p1.x + p2.x) / 2 + off * 0.8, y: (p1.y + p2.y) / 2 };
+  } else {                                      // 跨列：水平 S 曲线
+    const p1 = nodeRight(a), p2 = nodeLeft(b);
+    const dx = Math.max((p2.x - p1.x) * 0.5, 40);
+    d = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+    mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+  }
+  const basis = BASIS[e.basis];
+
+  const path = document.createElementNS(SVGNS, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', basis.color);
+  path.setAttribute('stroke-width', '2.2');
+  path.setAttribute('marker-end', 'url(#ah)');
+  if (basis.dash) path.setAttribute('stroke-dasharray', basis.dash);
+  if (e.bidirectional) path.setAttribute('marker-start', 'url(#ah)');
+  path.setAttribute('opacity', '.75');
+  svg.appendChild(path);
+
+  edgeEls.push({ path, edge: e });
+});
+
+/* 箭头 marker */
+const defs = document.createElementNS(SVGNS, 'defs');
+defs.innerHTML = Object.values(BASIS).map((v, i) =>
+  `<marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto">
+     <path d="M0,0 L7.5,3 L0,6 z" fill="#475569"/></marker>`).join('');
+svg.appendChild(defs);
+
+/* 每条边的说明文字 */
+const labels = [];
+EDGES.forEach((e, i) => {
+  const a = byId[e.from], b = byId[e.to];
+  const basis = BASIS[e.basis];
+  const lx = a.col === b.col
+    ? COL_X[a.col] + NODE_W + 100
+    : (nodeRight(a).x + nodeLeft(b).x) / 2;
+  const ly = (nodeCenter(a).y + nodeCenter(b).y) / 2;
+
+  const fo = document.createElementNS(SVGNS, 'foreignObject');
+  fo.setAttribute('x', lx - 130); fo.setAttribute('y', ly - 16);
+  fo.setAttribute('width', 260); fo.setAttribute('height', 34);
+  fo.setAttribute('class', 'elab');
+  fo.setAttribute('opacity', '0');
+  fo.dataset.edge = i;
+  fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="
+      font:11.5px/1.35 'Microsoft YaHei',sans-serif; text-align:center;
+      background:#fff; border:1px solid ${basis.color}; border-radius:6px;
+      padding:3px 6px; color:#0f172a; box-shadow:0 2px 8px rgba(15,23,42,.10)">
+      <b style="color:${basis.color}">${basis.label}</b> · ${e.relation}
+    </div>`;
+  svg.appendChild(fo);
+  labels.push(fo);
+});
+
+/* ---------------- 交互 ---------------- */
+let selected = null;
+
+function clearStates() {
+  document.querySelectorAll('.node').forEach(el => el.classList.remove('sel', 'dim'));
+  edgeEls.forEach(x => { x.path.setAttribute('opacity', '.75'); x.path.setAttribute('stroke-width', '2.2'); });
+  labels.forEach(f => f.setAttribute('opacity', '0'));
+}
+
+function hover(id) {
+  if (selected) return;
+  if (!id) { edgeEls.forEach(x => x.path.setAttribute('opacity', '.75')); labels.forEach(f => f.setAttribute('opacity','0'));
+             document.querySelectorAll('.node').forEach(el => el.classList.remove('dim')); return; }
+  const keep = new Set([id]);
+  EDGES.forEach(e => { if (e.from === id) keep.add(e.to); if (e.to === id) keep.add(e.from); });
+  document.querySelectorAll('.node').forEach(el => {
+    const nid = el.id.replace('node-', '');
+    el.classList.toggle('dim', !keep.has(nid));
+  });
+  edgeEls.forEach((x, i) => {
+    const on = x.edge.from === id || x.edge.to === id;
+    x.path.setAttribute('opacity', on ? '1' : '.12');
+    x.path.setAttribute('stroke-width', on ? '3' : '2.2');
+    labels[i].setAttribute('opacity', on ? '1' : '0');
+  });
+}
+
+function select(id) {
+  selected = id;
+  clearStates();
+  document.getElementById('node-' + id).classList.add('sel');
+  renderPanel(id);
+}
+
+/* 极简行内格式：**粗体** 与 `代码` */
+const fmt = s => s
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+  .replace(/`(.+?)`/g, '<code>$1</code>');
+
+function renderPanel(id) {
+  const n = byId[id];
+  const base = getBase();
+
+  /* 飞书链接 */
+  let feishuBtn = `<a class="btn disabled">飞书文档：暂无</a>`;
+  if (n.feishu && n.feishu.docx) {
+    const url = n.feishu.wiki ? `${base}/wiki/${n.feishu.wiki}` : `${base}/docx/${n.feishu.docx}`;
+    feishuBtn = `<a class="btn alt" href="${url}" target="_blank" rel="noopener">飞书文档 · ${n.feishu.label || ''}</a>`;
+  }
+
+  /* 关系 */
+  const ups = EDGES.filter(e => e.to === id);
+  const downs = EDGES.filter(e => e.from === id);
+  const relHtml = (arr, dir) => arr.map(e => {
+    const other = byId[dir === 'up' ? e.from : e.to];
+    const b = BASIS[e.basis];
+    return `<div class="rel">
+      <span class="dir" style="color:${b.color}">${dir === 'up' ? '↑ 上游' : '↓ 下游'}</span>
+      <span class="bt" style="background:${b.color}">${b.label}</span>
+      <span class="who">${other.title}</span>
+      <span class="why">${e.relation}${e.bidirectional ? '（双向对标）' : ''}</span>
+    </div>`;
+  }).join('') || `<div class="rel" style="color:#94a3b8">无</div>`;
+
+  /* 本地笔记 */
+  const notesHtml = (n.notes && n.notes.length)
+    ? `<ul class="plain">${n.notes.map(([lab, p]) =>
+        `<li><a href="${NOTE_ROOT}${p}" target="_blank" rel="noopener">${lab}</a></li>`).join('')}</ul>`
+    : `<div style="color:#94a3b8; font-size:12.5px">暂无本地笔记</div>`;
+
+  document.getElementById('panel').innerHTML = `
+    <h2>${n.title}</h2>
+    <div class="pmeta">${n.subtitle}</div>
+    <div class="pmeta">${n.type}　·　${n.cid}</div>
+    <span class="pkind" style="background:${n.accent}">${n.kind}</span>
+
+    <div class="btnrow">
+      <a class="btn" href="${PDF_ROOT}${n.pdf}" target="_blank" rel="noopener">📄 打开论文 PDF</a>
+      ${feishuBtn}
+    </div>
+
+    <div class="sec"><div class="st">一句话</div>${fmt(n.oneline)}</div>
+
+    <div class="sec"><div class="st">概述</div>
+      <ul>${n.overview.map(o => `<li>${fmt(o)}</li>`).join('')}</ul>
+    </div>
+
+    ${n.numbers && n.numbers.length ? `
+    <div class="sec"><div class="st">关键数字</div>
+      <table class="nums">${n.numbers.map(([k, v]) => `<tr><td>${k}</td><td>${fmt(v)}</td></tr>`).join('')}</table>
+    </div>` : ''}
+
+    <div class="sec"><div class="st">为什么在我的地图里</div>${fmt(n.why)}</div>
+
+    ${n.caveats && n.caveats.length ? `
+    <div class="sec"><div class="st">需要注意 / 待验证</div>
+      <ul>${n.caveats.map(c => `<li>${fmt(c)}</li>`).join('')}</ul>
+    </div>` : ''}
+
+    <div class="sec"><div class="st">上下游关系</div>${relHtml(ups, 'up')}${relHtml(downs, 'down')}</div>
+
+    <div class="sec"><div class="st">本地笔记</div>${notesHtml}</div>
+
+    <div class="note">
+      概述基于论文原文摘要 / 正文整理；<b>连线是我梳理的阅读地图，不代表论文之间的引用关系</b>。
+      若飞书链接打不开，请把右上角的「飞书域名」改成你所在租户的域名（形如
+      <code>https://xxx.feishu.cn</code>）。
+    </div>
+  `;
+}
+
+/* 默认选中第一篇 */
+select('enso-complexity');
+</script>
+</body>
+</html>

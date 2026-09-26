@@ -1,0 +1,34 @@
+{
+  "_comment": "已声明（非引用）关系的边。basis='infer' 的边是阅读地图推断，前端可一键隐藏。引用产生的边由 build.js 从 papers/*.json 的 cites 字段自动推导，不要写在这里。",
+  "edges": [
+    {
+      "from": "tritoncast",
+      "to": "unicm",
+      "basis": "same",
+      "relation": "共同难题：长时自回归的稳定性与误差累积",
+      "reason": "两者都要在数十步到数百步上自回归滚动，且都把「长时漂移」当作核心问题；问题域不同（地球系统通用场 vs 模态指数），但任务类型同为 multi-step-forecasting。"
+    },
+    {
+      "from": "tritoncast",
+      "to": "enso-causalnet",
+      "basis": "same",
+      "relation": "共同难题：把有效预报推到 20 个月以上",
+      "reason": "TritonCast 追求年尺度无漂移、CausalNet 追求 22 个月 ENSO —— 都属「延长有效预报时长」这一类目标。无引用关系。"
+    },
+    {
+      "from": "enso-causalnet",
+      "to": "unicm",
+      "basis": "same",
+      "relation": "同期对标：因果可解释 vs 耦合可解释",
+      "reason": "同一问题（长提前期 ENSO）的两条路线，发表时间接近（2025 / 2026），指标可直接比较（22 个月 vs 19 个月）。查证：两文互不引用。",
+      "bidirectional": true
+    },
+    {
+      "from": "finder",
+      "to": "unicm",
+      "basis": "infer",
+      "relation": "阅读地图邻接：结构化学习解决科学问题（弱关联）",
+      "reason": "FINDER 是「图上的序贯决策」，UniCM 是「场上的时空建模」，两者的方法族（GNN+RL vs 时空 Transformer）在本仓库的标签体系下并不重叠，且两文互不引用。这条边只表示「本次阅读把两者放在同一批里」，不表示学术关联 —— 前端可一键隐藏 infer 边。"
+    }
+  ]
+}

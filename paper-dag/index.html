@@ -104,6 +104,17 @@
   .rel .bt{font-size:10.5px; font-weight:700; color:#fff; border-radius:999px; padding:1px 7px; margin-right:7px}
   .rel .who{font-weight:700}
   .rel .why{color:#475569; margin-top:3px; display:block}
+  .relhead{display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+  .rel .src{font-size:10.5px; color:#94a3b8; margin-left:auto}
+  .proof{
+    font-size:11.5px; color:#475569; background:#fff; border-left:3px solid #cbd5e1;
+    padding:5px 8px; margin-top:6px; border-radius:0 5px 5px 0; line-height:1.65;
+  }
+  .tags{display:flex; gap:6px; flex-wrap:wrap}
+  .tags span{
+    font-size:11px; background:#f1f5f9; border:1px solid #e2e8f0;
+    border-radius:999px; padding:2px 9px; color:#334155;
+  }
   .note{font-size:12px; color:var(--muted); background:#fffbeb; border:1px solid #fde68a;
         border-radius:8px; padding:8px 10px; margin-top:10px}
   ul.plain{padding-left:18px; margin:0}
@@ -122,6 +133,9 @@
   <div class="cfg">
     <label>飞书域名</label>
     <input id="fbase" type="text" spellcheck="false" />
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;margin-left:6px">
+      <input type="checkbox" id="hideInfer" /> 隐藏推断边
+    </label>
   </div>
 </header>
 
@@ -248,6 +262,21 @@ EDGES.forEach((e, i) => {
   labels.push(fo);
 });
 
+/* ---------------- 隐藏推断边 ---------------- */
+const hideInferBox = document.getElementById('hideInfer');
+hideInferBox.checked = localStorage.getItem('hideInfer') === '1';
+function applyInferFilter() {
+  const hide = hideInferBox.checked;
+  localStorage.setItem('hideInfer', hide ? '1' : '0');
+  edgeEls.forEach((x, i) => {
+    const vis = !(hide && x.edge.basis === 'infer');
+    x.path.style.display = vis ? '' : 'none';
+    labels[i].style.display = vis ? '' : 'none';
+  });
+}
+hideInferBox.addEventListener('change', applyInferFilter);
+applyInferFilter();
+
 /* ---------------- 交互 ---------------- */
 let selected = null;
 
@@ -299,28 +328,65 @@ function renderPanel(id) {
     feishuBtn = `<a class="btn alt" href="${url}" target="_blank" rel="noopener">飞书文档 · ${n.feishu.label || ''}</a>`;
   }
 
-  /* 关系 */
-  const ups = EDGES.filter(e => e.to === id);
-  const downs = EDGES.filter(e => e.from === id);
-  const relHtml = (arr, dir) => arr.map(e => {
+  /* ---------- 关系（带证据） ---------- */
+  const relCard = (e, dir) => {
     const other = byId[dir === 'up' ? e.from : e.to];
     const b = BASIS[e.basis];
+    const isDerived = e.source === 'derived:citation';
+    const proof = e.evidence
+      ? `<div class="proof"><b>引用原文</b>${e.where ? `（${e.where}）` : ''}：<i>${fmt(e.evidence)}</i></div>`
+      : (e.reason ? `<div class="proof"><b>判定理由</b>：${fmt(e.reason)}</div>` : '');
     return `<div class="rel">
-      <span class="dir" style="color:${b.color}">${dir === 'up' ? '↑ 上游' : '↓ 下游'}</span>
-      <span class="bt" style="background:${b.color}">${b.label}</span>
-      <span class="who">${other.title}</span>
+      <div class="relhead">
+        <span class="dir" style="color:${b.color}">${dir === 'up' ? '↑ 上游' : '↓ 下游'}</span>
+        <span class="bt" style="background:${b.color}">${b.label}</span>
+        <span class="who">${other.title}</span>
+        <span class="src">${isDerived ? '推导自 cites' : '已声明'}</span>
+      </div>
       <span class="why">${e.relation}${e.bidirectional ? '（双向对标）' : ''}</span>
+      ${proof}
     </div>`;
-  }).join('') || `<div class="rel" style="color:#94a3b8">无</div>`;
+  };
+  const ups = EDGES.filter(e => e.to === id);
+  const downs = EDGES.filter(e => e.from === id);
+  const relHtml = arr => arr.map(e => relCard(e, arr === ups ? 'up' : 'down')).join('')
+    || `<div class="rel" style="color:#94a3b8">无</div>`;
 
-  /* 本地笔记 */
+  /* ---------- 本论文引用仓库内其他论文 ---------- */
+  const citesHtml = (n.cites || []).map(c => {
+    const t = byId[c.target];
+    return `<div class="rel">
+      <div class="relhead">
+        <span class="bt" style="background:#dc2626">引用</span>
+        <span class="who">${t ? t.title : c.target}</span>
+        <span class="src">${c.where || ''}</span>
+      </div>
+      <div class="proof"><i>${fmt(c.evidence)}</i></div>
+    </div>`;
+  }).join('');
+
   const notesHtml = (n.notes && n.notes.length)
     ? `<ul class="plain">${n.notes.map(([lab, p]) =>
         `<li><a href="${NOTE_ROOT}${p}" target="_blank" rel="noopener">${lab}</a></li>`).join('')}</ul>`
     : `<div style="color:#94a3b8; font-size:12.5px">暂无本地笔记</div>`;
 
+  const list = (t, arr) => (arr && arr.length)
+    ? `<div class="sec"><div class="st">${t}</div><ul>${arr.map(x => `<li>${fmt(x)}</li>`).join('')}</ul></div>` : '';
+  const tags = (t, arr) => (arr && arr.length)
+    ? `<div class="sec"><div class="st">${t}</div><div class="tags">${arr.map(x => `<span>${x}</span>`).join('')}</div></div>` : '';
+
+  const dm = n.data || {};
+  const dataHtml = (dm.pretrain?.length || dm.eval?.length) ? `
+    <div class="sec"><div class="st">数据</div>
+      <table class="nums">
+        ${dm.pretrain?.length ? `<tr><td>预训练 / 训练</td><td>${fmt(dm.pretrain.join('；'))}</td></tr>` : ''}
+        ${dm.eval?.length ? `<tr><td>评估</td><td>${fmt(dm.eval.join('、'))}</td></tr>` : ''}
+      </table>
+    </div>` : '';
+
   document.getElementById('panel').innerHTML = `
     <h2>${n.title}</h2>
+    ${n.fullTitle && n.fullTitle !== n.title ? `<div class="pmeta">${n.fullTitle}</div>` : ''}
     <div class="pmeta">${n.subtitle}</div>
     <div class="pmeta">${n.type}　·　${n.cid}</div>
     <span class="pkind" style="background:${n.accent}">${n.kind}</span>
@@ -332,30 +398,40 @@ function renderPanel(id) {
 
     <div class="sec"><div class="st">一句话</div>${fmt(n.oneline)}</div>
 
-    <div class="sec"><div class="st">概述</div>
-      <ul>${n.overview.map(o => `<li>${fmt(o)}</li>`).join('')}</ul>
+    <div class="sec"><div class="st">解决什么问题</div>
+      ${fmt(n.problem?.statement || '')}
+      ${n.problem?.difficulty ? `<div class="proof"><b>难度</b>：${fmt(n.problem.difficulty)}</div>` : ''}
+      <div class="tags" style="margin-top:7px">
+        <span style="background:#eef2ff">task: ${n.problem?.task || '-'}</span>
+        ${(n.problem?.domain || []).map(d => `<span style="background:#eef2ff">domain: ${d}</span>`).join('')}
+      </div>
     </div>
 
-    ${n.numbers && n.numbers.length ? `
+    ${tags('方法族（会参与 DAG 推导）', n.methods)}
+    ${dataHtml}
+    ${list('主要贡献', n.contributions)}
+
+    ${n.numbers?.length ? `
     <div class="sec"><div class="st">关键数字</div>
       <table class="nums">${n.numbers.map(([k, v]) => `<tr><td>${k}</td><td>${fmt(v)}</td></tr>`).join('')}</table>
     </div>` : ''}
 
-    <div class="sec"><div class="st">为什么在我的地图里</div>${fmt(n.why)}</div>
+    ${list('对标 / 基线', n.baselines)}
+    ${list('局限与待验证', n.limitations)}
+    ${list('可迁移资产', n.reusable)}
 
-    ${n.caveats && n.caveats.length ? `
-    <div class="sec"><div class="st">需要注意 / 待验证</div>
-      <ul>${n.caveats.map(c => `<li>${fmt(c)}</li>`).join('')}</ul>
-    </div>` : ''}
-
-    <div class="sec"><div class="st">上下游关系</div>${relHtml(ups, 'up')}${relHtml(downs, 'down')}</div>
+    <div class="sec"><div class="st">与图中其他论文的关系</div>
+      ${citesHtml}
+      ${relHtml(ups)}${relHtml(downs)}
+    </div>
 
     <div class="sec"><div class="st">本地笔记</div>${notesHtml}</div>
 
     <div class="note">
-      概述基于论文原文摘要 / 正文整理；<b>连线是我梳理的阅读地图，不代表论文之间的引用关系</b>。
-      若飞书链接打不开，请把右上角的「飞书域名」改成你所在租户的域名（形如
-      <code>https://xxx.feishu.cn</code>）。
+      ① 红线（明确）的边由 <code>papers/*.json</code> 的 <b>cites 字段推导</b>，必须附引用原文；
+      其余边在 <code>relations.json</code> 里<b>显式声明</b>并给出理由。<br>
+      ② 本面板内容全部来自 <code>papers/${id}.json</code>，改那儿再跑 <code>node build.js</code>。<br>
+      ③ 若飞书链接打不开，把右上角「飞书域名」改成你租户的域名（形如 <code>https://xxx.feishu.cn</code>）。
     </div>
   `;
 }

@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Paper Parse Schema",
+  "description": "论文解析框架：每篇论文解析成同一套字段。其中 problem / methods / cites / baselines 是「会生成 DAG 边」的字段。",
+  "type": "object",
+  "required": ["id", "title", "venue", "year", "problem", "methods"],
+  "properties": {
+    "id": { "type": "string", "description": "唯一标识，用作 DAG 节点 id 与文件名" },
+    "title": { "type": "string" },
+    "short": { "type": "string", "description": "短名，用于图上显示" },
+    "authors": { "type": "string" },
+    "venue": { "type": "string" },
+    "year": { "type": "integer" },
+    "doi": { "type": "string", "description": "DOI 或 arXiv id" },
+    "type": { "type": "string", "description": "Review / Research Article / Preprint / Research Letter" },
+    "role": { "type": "string", "description": "在地图中的角色：理论地基 / 方法来源 / 技术对标 / 同期对标 / 当前主攻" },
+    "accent": { "type": "string", "description": "节点颜色 #rrggbb" },
+    "pos": {
+      "type": "object",
+      "description": "DAG 布局槽位",
+      "properties": { "col": { "type": "integer" }, "row": { "type": "integer" } },
+      "required": ["col", "row"]
+    },
+    "oneline": { "type": "string", "description": "一句话概括" },
+
+    "problem": {
+      "type": "object",
+      "description": "【生成边】解决什么问题",
+      "properties": {
+        "statement": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "domain": { "type": "array", "items": { "type": "string" }, "description": "问题域标签，如 climate-mode-forecasting / network-dismantling" },
+        "task": { "type": "string", "description": "任务类型：multi-step-forecasting / combinatorial-optimization / synthesis-review" },
+        "object": { "type": "string", "description": "研究对象" }
+      },
+      "required": ["statement", "domain", "task"]
+    },
+
+    "methods": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "【生成边】方法族标签，如 spatiotemporal-transformer / deep-reinforcement-learning / causal-inference"
+    },
+
+    "data": {
+      "type": "object",
+      "properties": {
+        "pretrain": { "type": "array", "items": { "type": "string" } },
+        "eval": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "cites": {
+      "type": "array",
+      "description": "【生成边】显式引用「本仓库内其他论文」的记录。每条必须有可核对的 evidence 原文。",
+      "items": {
+        "type": "object",
+        "required": ["target", "evidence"],
+        "properties": {
+          "target": { "type": "string", "description": "被引论文的 id" },
+          "relation": { "type": "string", "description": "theoretical-basis / method-source / benchmark / background" },
+          "evidence": { "type": "string", "description": "原文出处，如 'ref. 8: Timmermann, A. et al. ... Nature 559, 535-545 (2018).'" },
+          "where": { "type": "string", "description": "在本文中的位置：参考文献编号 或 正文行" }
+        }
+      }
+    },
+
+    "baselines": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "【生成边】对标 / 基线的名字（若命中本仓库内论文名，可生成边）"
+    },
+
+    "contributions": { "type": "array", "items": { "type": "string" } },
+    "numbers": { "type": "array", "items": { "type": "array", "items": { "type": "string" } }, "description": "[[指标, 数值], ...]" },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "reusable": { "type": "array", "items": { "type": "string" }, "description": "对本人的可迁移资产" },
+    "notes": { "type": "array", "items": { "type": "array", "items": { "type": "string" } }, "description": "[[显示名, 相对路径], ...]" },
+    "pdf": { "type": "string" },
+    "feishu": { "type": "object" }
+  }
+}

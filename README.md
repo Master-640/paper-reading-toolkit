@@ -8,6 +8,7 @@
 |---|---|---|
 | **[`paper-dag/`](paper-dag/)** | 把多篇论文串成**有向图（DAG）**，点节点看概述，一键打开 PDF / 飞书文档 / 本地笔记 | 无（纯原生 HTML/CSS/JS） |
 | **[`pdf-tool/`](pdf-tool/)** | 把 PDF 转成**能直接分析**的干净文本：分栏不错行、页眉页脚已清理、断词已还原 | PyMuPDF |
+| **[`audit/`](audit/)** | **复现审计的可执行证据**：论文正文 / 补充材料 / 官方代码三者的逐项对照，每个数字都有脚本可复跑 | PyMuPDF（+ torch 仅一个脚本） |
 
 ---
 
@@ -134,16 +135,45 @@ out/<name>/
 ├── pdf-tool/                  # 工具二：PDF 自动抓取
 │   ├── extract.py
 │   └── README.md
+├── audit/                     # 工具三：复现审计的可执行证据
+│   ├── _paths.py              #   路径解析（PDF 不在仓库内）
+│   ├── 01_…13_*.py            #   13 个探针脚本，见 audit/README.md
+│   ├── README.md              #   每个脚本证明了什么
+│   └── out/                   #   输出（gitignore）
 ├── FINDER/                    # 第三方：FINDER 官方实现（MIT，见 LICENSE）
 ├── GRACO/                     # 图组合优化的深度 RL 框架（MIT）
 ├── PPT素材/ 代码截图/          # 组会材料
-├── UniCM-*.md                 # 阅读笔记：UniCM
+├── UniCM-复现审计.md           # ★ 正文 / SI / 官方代码 三者不一致的审计记录
+├── UniCM-*.md                 # 其余阅读笔记：UniCM
 ├── FINDER-*.md                # 阅读笔记：FINDER
 ├── enso_oscillator_logic_chain.md / .png   # ENSO 振子逻辑链图
 ├── feishu_week2_summary.md    # FINDER 组会笔记
 ├── LICENSE
 └── README.md
 ```
+
+---
+
+## 🔍 `audit/` —— 为什么还要审计
+
+读完一篇论文只是第一步。**论文正文、补充材料、官方代码三者经常互相矛盾**，
+而这类矛盾恰恰是复现时最致命的。`audit/` 把这些矛盾逐条落地成可复跑的检查：
+
+| 类型 | 例（UniCM） | 手段 |
+|---|---|---|
+| 配置不一致 | 正文说 FFN 中间维度 512，发布配置实际 256 | 读 `config.py` + 跑 `torch` 实例化量参数量 |
+| 机制不存在 | 正文 Eq 6/7 的每模态投影矩阵 `W_m`，代码里是广播裸加 | 全仓库 grep + 逐行读 `models.py` |
+| 数据口径不一致 | 5 个输入通道来自 **3 个不同 CMIP6 模式**，样本内物理量不属于同一气候态 | 逐行读 `LoadData.py` 的硬编码路径 |
+| 图与文反向 | SI 正文说「模型越大越好」，图上最小的 S-1 在 6/7 模态最好 | 渲染 SI 图 + 从 PDF 矢量数据读等值线 |
+| caption 缺信息 | 主图 Fig.3b 漏写横轴（实为 12 个目标季节），靠 SI 的同款图才补上 | 量条带几何 + 找到 SI 里标全轴的孪生图 |
+
+```bash
+python -m pip install pymupdf
+python audit/11_extract_fig3b_contours.py     # 例：抽 Fig.3b 的 0.5 等值线位置
+```
+
+> **注意**：`audit/` 的输出是**从图形读出的近似值**（像素读数、矢量几何换算），
+> 不等同于论文的原始数值。凡引用都带精度限定，见 `audit/README.md` 末节。
 
 ---
 

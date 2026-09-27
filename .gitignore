@@ -22,6 +22,7 @@ _*.json
 UniCM_Fig*.png
 UniCM_nature_page.html
 UniCM_SI_figs/
+UniCM_Fig3/
 
 # 第三方论文官方代码（本地 clone，用于查实现，不随仓库分发）
 /_UniCM_code/

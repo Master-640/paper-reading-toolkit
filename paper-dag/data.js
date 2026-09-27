@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 源文件在 papers/*.json 与 relations.json
  * 重新生成： node build.js
- * 生成时间： 2026-09-26 14:11:06
+ * 生成时间： 2026-09-27 07:59:42
  */
 
 const FEISHU_BASE_DEFAULT = "https://feishu.cn";
@@ -461,7 +461,7 @@ const NODES = [
       ],
       [
         "对 S2S 大模型（12 月全球平均）",
-        "ACC 0.379 / RMSE 0.465 vs CAS-Canglong 0.262/0.505、FuXi-S2S 0.207/0.515"
+        "ACC 0.379 / RMSE 0.465 vs FuXi-S2S 0.262/0.505、CAS-Canglong 0.207/0.515"
       ],
       [
         "训练样本",
@@ -477,12 +477,19 @@ const NODES = [
       "CAS-Canglong"
     ],
     "limitations": [
-      "最核心的 mode-to-patch guidance 从未被单独消融：GlobalFormer-only 对照同时删掉了引导 + 模态分支 + 辅助损失，增益归因不成立",
-      "四个 CMIP6 模拟实质只等于 2 个独立模式家族，且筛选标准未公开",
+      "最核心的 mode-to-patch guidance 从未被单独消融：GlobalFormer-only 对照同时删掉了引导 + 模态分支 + 辅助损失，增益无法归因",
+      "guidance 的每模态投影矩阵 W_m 在发布代码中完全不存在（models.py L223/L248 是广播裸加），正文 Eq 6/7 与 L1119-1120 描述的机制代码里没有",
+      "5 个输入通道来自 3 个不同 CMIP6 模式（SST/风应力 = CESM2-FV2，hT = EC-Earth3-Veg-LR，T300 = EC-Earth3-CC），同一样本内物理量不属于同一气候态",
+      "「retained four simulations」指文件池而非样本池；N=1,945 只等于单条 165 年序列",
+      "λ 三方矛盾：正文 + Fig 38b（λ2=1, λ3=0.01）与 SI 5.2 + train.sh（λ2=0.01, λ3=1）整体对调；config.py 的 help 文本与 Trainer.py 实际用法也是反的",
+      "FFN 中间维度正文说 512，发布配置实际 256（无扩张）；SI Table 2 没有这一行",
+      "miniDecoder 克隆 3 份 add-norm，第 3 份从未调用（4,096 个死参数），第 2 份被复用两次导致交叉注意力与 FFN 的 LayerNorm 绑定",
+      "SI Section 5 缺时空注意力消融、FFN 消融、guidance 单独消融，λ3 也从未单独置 0；且全套消融没有误差棒（明明有 20 个种子）",
+      "Fig 38c 与正文解释反向：最小的 S-1 在 6/7 模态最好，SI 却说 capacity 越大越好、模型未饱和；且 S-1..S-4 从未定义",
+      "Fig 3b caption 漏掉横轴（实为 12 个三个月目标季节 DJF…NDJ），菱形显著性标记也未定义",
       "辅助物理场（风应力、温跃层、上层海洋温度）不作独立验证目标",
-      "λ 取值正文（λ1=1, λ2=1, λ3=0.01）与 SI（λ1=λ3=1.0, λ2=0.01）互相矛盾",
-      "样本账（1,945）与「retained four simulations」的说法对不上",
-      "经纬域三处口径不一致（40°S–0°N / 40°S–40°N / Np=12×72）"
+      "经纬域三处口径不一致（40°S–0°N / 40°S–40°N / Np=12×72 把网格数当 patch 数），代码实际 216 个 patch",
+      "发布代码缺 dataset/ 与预处理脚本，无法端到端复现"
     ],
     "reusable": [
       "「宏观状态变量 ↔ 细粒度物理场」的双向耦合建模，可平移到海洋气象大模型（大尺度指数/环流模态 ↔ 高分辨率温盐流场）",
